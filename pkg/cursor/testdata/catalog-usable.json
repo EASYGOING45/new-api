@@ -1,0 +1,97 @@
+{
+  "models": [
+    {
+      "modelId": "claude-opus-5-5-high"
+    },
+    {
+      "modelId": "claude-opus-5-5-high-fast"
+    },
+    {
+      "modelId": "claude-opus-5-5-low"
+    },
+    {
+      "modelId": "claude-opus-5-5-low-fast"
+    },
+    {
+      "modelId": "claude-opus-5-5-max"
+    },
+    {
+      "modelId": "claude-opus-5-5-max-fast"
+    },
+    {
+      "modelId": "claude-opus-5-5-medium"
+    },
+    {
+      "modelId": "claude-opus-5-5-medium-fast"
+    },
+    {
+      "modelId": "claude-opus-5-5-xhigh"
+    },
+    {
+      "modelId": "claude-opus-5-5-xhigh-fast"
+    },
+    {
+      "modelId": "composer-2.5"
+    },
+    {
+      "modelId": "composer-2.5-fast"
+    },
+    {
+      "modelId": "gpt-5.5-extra-high"
+    },
+    {
+      "modelId": "gpt-5.5-extra-high-fast"
+    },
+    {
+      "modelId": "gpt-5.5-high"
+    },
+    {
+      "modelId": "gpt-5.5-high-fast"
+    },
+    {
+      "modelId": "gpt-5.5-low"
+    },
+    {
+      "modelId": "gpt-5.5-low-fast"
+    },
+    {
+      "modelId": "gpt-5.5-medium"
+    },
+    {
+      "modelId": "gpt-5.5-medium-fast"
+    },
+    {
+      "modelId": "gpt-5.5-none"
+    },
+    {
+      "modelId": "gpt-5.5-none-fast"
+    },
+    {
+      "modelId": "grok"
+    },
+    {
+      "modelId": "grok-4.7-high"
+    },
+    {
+      "modelId": "grok-4.7-high-fast"
+    },
+    {
+      "modelId": "grok-4.7-low"
+    },
+    {
+      "modelId": "grok-4.7-low-fast"
+    },
+    {
+      "modelId": "grok-4.7-medium"
+    },
+    {
+      "modelId": "grok-4.7-medium-fast"
+    },
+    {
+      "modelId": "grok-4.7-xhigh"
+    },
+    {
+      "modelId": "grok-4.7-xhigh-fast"
+    }
+  ]
+}

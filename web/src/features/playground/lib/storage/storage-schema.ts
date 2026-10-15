@@ -34,6 +34,7 @@ export const playgroundConfigSchema = z.object({
   presence_penalty: z.number().optional(),
   seed: z.number().nullable().optional(),
   stream: z.boolean().optional(),
+  cursor_parameters: z.record(z.string(), z.string()).optional(),
 })
 
 export const parameterEnabledSchema = z.object({

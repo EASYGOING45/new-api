@@ -114,15 +114,20 @@ func SyncChannelCache(frequency int) {
 	}
 }
 
+// ChannelCandidatePolicy can narrow authorized candidates before priority and
+// weight selection. It must not mutate channels, perform I/O or reenter caches.
+type ChannelCandidatePolicy func([]*Channel) []*Channel
+
 func GetRandomSatisfiedChannel(
 	group string,
 	model string,
 	retry int,
 	filters []dto.ChannelFilter,
+	policies ...ChannelCandidatePolicy,
 ) (*Channel, error) {
 	// if memory cache is disabled, get channel directly from database
 	if !common.MemoryCacheEnabled {
-		return GetChannel(group, model, retry, filters)
+		return GetChannel(group, model, retry, filters, policies...)
 	}
 
 	channelSyncLock.RLock()
@@ -139,6 +144,26 @@ func GetRandomSatisfiedChannel(
 
 	if len(channels) == 0 {
 		return nil, nil
+	}
+	if len(policies) > 0 {
+		candidates := make([]*Channel, 0, len(channels))
+		for _, id := range channels {
+			channel := channelsIDM[id]
+			if channel == nil {
+				return nil, fmt.Errorf("database consistency error: channel #%d does not exist", id)
+			}
+			candidates = append(candidates, channel)
+		}
+		for _, policy := range policies {
+			candidates = policy(candidates)
+		}
+		channels = make([]int, 0, len(candidates))
+		for _, channel := range candidates {
+			channels = append(channels, channel.Id)
+		}
+		if len(channels) == 0 {
+			return nil, nil
+		}
 	}
 
 	if len(channels) == 1 {

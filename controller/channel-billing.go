@@ -1,9 +1,11 @@
 package controller
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/QuantumNous/new-api/pkg/cursor"
 	"io"
 	"math"
 	"net/http"
@@ -615,6 +617,14 @@ func fetchAdvancedCustomBalance(channel *model.Channel) (channelBalanceResult, e
 }
 
 func updateChannelBalance(channel *model.Channel) (channelBalanceResult, error) {
+	if channel.Type == constant.ChannelTypeCursor {
+		snapshot, err := cursor.Default.Quota(context.Background(), channel.Key)
+		if err != nil {
+			return channelBalanceResult{}, err
+		}
+		b, err := common.Marshal(snapshot)
+		return channelBalanceResult{RawResponse: string(b)}, err
+	}
 	if channel.Type == constant.ChannelTypeAdvancedCustom {
 		return fetchAdvancedCustomBalance(channel)
 	}

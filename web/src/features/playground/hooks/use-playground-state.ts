@@ -113,6 +113,11 @@ export function usePlaygroundState() {
     <K extends keyof PlaygroundConfig>(key: K, value: PlaygroundConfig[K]) => {
       setConfig((prev) => {
         const updated = { ...prev, [key]: value }
+        if (key === 'model' || key === 'group') {
+          updated.model_provider = undefined
+          updated.cursor_capabilities = undefined
+          updated.cursor_parameters = undefined
+        }
         saveConfig(updated)
         return updated
       })

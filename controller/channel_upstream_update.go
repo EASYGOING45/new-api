@@ -364,6 +364,13 @@ func getFetchModelsResponseBody(method string, requestURL string, channel *model
 }
 
 func fetchChannelUpstreamModelIDs(channel *model.Channel) ([]string, error) {
+	if channel.Type == constant.ChannelTypeCursor {
+		catalog, err := service.FetchCursorChannelCatalog(context.Background(), channel, false)
+		if err != nil {
+			return nil, err
+		}
+		return catalog.IDs(), nil
+	}
 	if channel.Type == constant.ChannelTypeTaskPlugin {
 		plugin, ok := jsplugin.DefaultRegistry.Get(channel.GetSetting().TaskPluginKey)
 		if !ok {

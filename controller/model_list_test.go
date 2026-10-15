@@ -1,16 +1,21 @@
 package controller
 
 import (
+	"context"
 	"fmt"
+	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"strings"
+	"sync/atomic"
 	"testing"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/model"
+	nativecursor "github.com/QuantumNous/new-api/pkg/cursor"
 	"github.com/QuantumNous/new-api/relaykit/dto"
 	"github.com/QuantumNous/new-api/setting"
 	"github.com/QuantumNous/new-api/setting/config"
@@ -30,8 +35,136 @@ type listModelsResponse struct {
 }
 
 type userModelsResponse struct {
-	Success bool     `json:"success"`
-	Data    []string `json:"data"`
+	Success           bool                                 `json:"success"`
+	Data              []string                             `json:"data"`
+	ModelProviders    map[string]string                    `json:"model_providers"`
+	ModelCapabilities map[string]nativecursor.CatalogModel `json:"model_capabilities"`
+}
+
+func TestGetUserModelsIncludesCursorProviderWithinAllowedGroup(t *testing.T) {
+	db := setupModelListControllerTestDB(t)
+	previousCache := common.MemoryCacheEnabled
+	common.MemoryCacheEnabled = false
+	t.Cleanup(func() { common.MemoryCacheEnabled = previousCache })
+	var discoveries, quotaQueries, settingsQueries atomic.Int32
+	upstream := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "Bearer fixture-allowed", r.Header.Get("Authorization"))
+		switch r.URL.Path {
+		case "/auth/exchange_user_api_key":
+			io.WriteString(w, `{"accessToken":"fixture-allowed"}`)
+		case "/aiserver.v1.ServerConfigService/GetServerConfig":
+			io.WriteString(w, `{}`)
+		case "/aiserver.v1.DashboardService/GetCurrentPeriodUsage":
+			quotaQueries.Add(1)
+			io.WriteString(w, `{"planUsage":{"autoPercentUsed":2,"apiPercentUsed":100},"billingCycleEnd":"4102444800000","spendLimitUsage":{"limitType":"team","individualLimit":1000,"individualUsed":1000,"pooledLimit":"10000","pooledUsed":1000}}`)
+		case "/aiserver.v1.DashboardService/GetHardLimit":
+			settingsQueries.Add(1)
+			io.WriteString(w, `{ "hardLimit":100 }`)
+		case "/aiserver.v1.AiService/AvailableModels":
+			discoveries.Add(1)
+			io.WriteString(w, `{"models":[{"name":"future-model","vendorName":"future-vendor","variants":[{"legacySlug":"future-model"}]},{"name":"unconfigured-model","variants":[{"legacySlug":"unconfigured-model"}]}]}`)
+		case "/agent.v1.AgentService/GetUsableModels":
+			io.WriteString(w, `{"models":[{"modelId":"future-model"},{"modelId":"unconfigured-model"}]}`)
+		default:
+			t.Errorf("unexpected endpoint: %s", r.URL.Path)
+			http.NotFound(w, r)
+		}
+	}))
+	upstream.EnableHTTP2 = true
+	upstream.StartTLS()
+	t.Cleanup(upstream.Close)
+	transport := upstream.Client().Transport.(*http.Transport).Clone()
+	transport.TLSClientConfig.ServerName = "example.com"
+	transport.DialContext = func(ctx context.Context, network, address string) (net.Conn, error) {
+		return (&net.Dialer{}).DialContext(ctx, network, upstream.Listener.Addr().String())
+	}
+	previousTransport, previousClient := http.DefaultTransport, nativecursor.Default
+	http.DefaultTransport = transport
+	nativecursor.Default = nativecursor.NewClient()
+	http.DefaultTransport = previousTransport
+	t.Cleanup(func() { nativecursor.Default = previousClient })
+	require.NoError(t, db.Create(&model.User{Id: 1010, Username: "cursor-model-user", Password: "password", Group: "default", Status: common.UserStatusEnabled}).Error)
+	require.NoError(t, db.Create(&[]model.Channel{
+		{Id: 1, Type: constant.ChannelTypeCursor, Key: "fixture-allowed", Status: common.ChannelStatusEnabled},
+		{Id: 2, Type: constant.ChannelTypeCursor, Key: "must-not-query-private-account", Status: common.ChannelStatusEnabled},
+	}).Error)
+	require.NoError(t, db.Create(&[]model.Ability{
+		{Group: "default", Model: "future-model", ChannelId: 1, Enabled: true},
+		{Group: "cursor-private-unavailable", Model: "private-model", ChannelId: 2, Enabled: true},
+	}).Error)
+	for _, group := range []string{"default", "cursor-private-unavailable"} {
+		recorder := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(recorder)
+		c.Request = httptest.NewRequest(http.MethodGet, "/api/user/models?group="+group, nil)
+		c.Set("id", 1010)
+		GetUserModels(c)
+		var response userModelsResponse
+		require.Equal(t, http.StatusOK, recorder.Code)
+		require.NoError(t, common.Unmarshal(recorder.Body.Bytes(), &response))
+		require.True(t, response.Success)
+		assert.NotContains(t, recorder.Body.String(), "fixture-allowed")
+		assert.NotContains(t, recorder.Body.String(), "unconfigured-model")
+		if group == "default" {
+			assert.Equal(t, []string{"future-model"}, response.Data)
+			assert.Equal(t, map[string]string{"future-model": "future-vendor"}, response.ModelProviders)
+			require.Len(t, response.ModelCapabilities, 1)
+			assert.Equal(t, "future-model", response.ModelCapabilities["future-model"].BaseID)
+		} else {
+			assert.Empty(t, response.Data)
+			assert.Empty(t, response.ModelProviders)
+			assert.Empty(t, response.ModelCapabilities)
+		}
+	}
+	for _, tc := range []struct {
+		group, model string
+		count        int
+	}{
+		{"default", "future-model", 1},
+		{"cursor-private-unavailable", "private-model", 0},
+		{"default", "unconfigured-model", 0},
+		{"default", "private-model", 0},
+	} {
+		recorder := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(recorder)
+		c.Request = httptest.NewRequest(http.MethodGet, "/api/user/models?group="+tc.group+"&cursor_status_model="+tc.model, nil)
+		c.Set("id", 1010)
+		GetUserModels(c)
+		var response struct {
+			Success bool                `json:"success"`
+			Data    []CursorRouteStatus `json:"data"`
+		}
+		require.NoError(t, common.Unmarshal(recorder.Body.Bytes(), &response))
+		require.True(t, response.Success)
+		require.Len(t, response.Data, tc.count)
+		assert.NotContains(t, recorder.Body.String(), "fixture-allowed")
+		assert.NotContains(t, recorder.Body.String(), "channel_id")
+		if tc.count > 0 {
+			require.Len(t, response.Data[0].Quota.Windows, 2)
+			assert.Equal(t, "enabled", response.Data[0].Quota.OnDemand)
+			assert.Equal(t, "exhausted", response.Data[0].Quota.OnDemandBudget.State)
+			assert.Equal(t, "known", response.Data[0].Quota.ResetState)
+		}
+	}
+	require.EqualValues(t, 1, quotaQueries.Load(), "private/unconfigured models must never query credentials")
+	assert.EqualValues(t, 1, settingsQueries.Load(), "settings must use the same authorized account boundary")
+	assert.EqualValues(t, 1, discoveries.Load())
+	// API token limits must also apply to the enriched OpenAI model list.
+	previousSelfUse := operation_setting.SelfUseModeEnabled
+	operation_setting.SelfUseModeEnabled = true
+	defer func() { operation_setting.SelfUseModeEnabled = previousSelfUse }()
+	recorder := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(recorder)
+	c.Request = httptest.NewRequest(http.MethodGet, "/v1/models", nil)
+	c.Set(string(constant.ContextKeyTokenGroup), "default")
+	c.Set(string(constant.ContextKeyTokenModelLimitEnabled), true)
+	c.Set(string(constant.ContextKeyTokenModelLimit), map[string]bool{"future-model": true})
+	ListModels(c, constant.ChannelTypeOpenAI)
+	var response listModelsResponse
+	require.NoError(t, common.Unmarshal(recorder.Body.Bytes(), &response))
+	require.Len(t, response.Data, 1)
+	assert.Equal(t, "future-vendor", response.Data[0].OwnedBy)
+	assert.Contains(t, recorder.Body.String(), `"cursor":`)
+	assert.NotContains(t, recorder.Body.String(), "unconfigured-model")
 }
 
 func setupModelListControllerTestDB(t *testing.T) *gorm.DB {

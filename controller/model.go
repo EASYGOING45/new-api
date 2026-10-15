@@ -1,14 +1,18 @@
 package controller
 
 import (
+	"context"
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/model"
+	native "github.com/QuantumNous/new-api/pkg/cursor"
 	"github.com/QuantumNous/new-api/pkg/jsplugin"
 	"github.com/QuantumNous/new-api/relay"
 	"github.com/QuantumNous/new-api/relay/channel/ai360"
@@ -160,6 +164,90 @@ func getPreferredModelOwners(modelNames []string, groups []string) map[string]st
 	return owners
 }
 
+// getCursorModelCapabilities only discovers accounts reachable through the
+// caller's authorized groups and configured models. No key or channel ID is
+// returned. Mixed transports cannot promise a common Cursor parameter contract.
+func getCursorModelCapabilities(ctx context.Context, names, groups []string, owners map[string]string) map[string]native.CatalogModel {
+	result := map[string]native.CatalogModel{}
+	wanted := map[string]bool{}
+	for _, name := range names {
+		if owners[name] == "cursor" {
+			wanted[name] = true
+		}
+	}
+	if len(wanted) == 0 {
+		return result
+	}
+	abilities, err := model.GetAllEnableAbilityWithChannels()
+	if err != nil {
+		for name := range wanted {
+			result[name] = native.CatalogModel{ID: name, Provider: "cursor", Error: "Cursor catalog is unavailable"}
+		}
+		return result
+	}
+	channelIDs := map[int]bool{}
+	for _, a := range abilities {
+		if wanted[a.Model] && slices.Contains(groups, a.Group) && a.ChannelType == constant.ChannelTypeCursor {
+			channelIDs[a.ChannelId] = true
+		}
+	}
+	ctx, cancel := context.WithTimeout(ctx, 25*time.Second)
+	defer cancel()
+	catalogs := map[int]*native.Catalog{}
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+	limit := make(chan struct{}, 4)
+	for id := range channelIDs {
+		wg.Go(func() {
+			select {
+			case limit <- struct{}{}:
+			case <-ctx.Done():
+				return
+			}
+			defer func() { <-limit }()
+			channel, err := model.CacheGetChannel(id)
+			if err != nil || channel.Status != common.ChannelStatusEnabled {
+				return
+			}
+			catalog, err := service.FetchCursorChannelCatalog(ctx, channel, false)
+			if err == nil {
+				mu.Lock()
+				catalogs[id] = catalog
+				mu.Unlock()
+			}
+		})
+	}
+	wg.Wait()
+	for _, a := range abilities {
+		if !wanted[a.Model] || !slices.Contains(groups, a.Group) {
+			continue
+		}
+		entry := native.CatalogModel{ID: a.Model, Provider: "cursor", Error: "Cursor catalog is unavailable for this route"}
+		if a.ChannelType == constant.ChannelTypeCursor {
+			if catalog := catalogs[a.ChannelId]; catalog != nil {
+				if found, ok := catalog.Model(a.Model); ok {
+					entry = found
+				}
+			}
+		}
+		if prior, ok := result[a.Model]; ok {
+			entry = prior.Intersect(entry)
+		}
+		result[a.Model] = entry
+	}
+	for name := range wanted {
+		if _, ok := result[name]; !ok {
+			result[name] = native.CatalogModel{ID: name, Provider: "cursor", Error: "Cursor catalog is unavailable for this route"}
+		}
+	}
+	for name, cap := range result {
+		if cap.Error == "" {
+			owners[name] = cap.Provider
+		}
+	}
+	return result
+}
+
 func buildOpenAIModel(modelName string, ownerByModel map[string]string) dto.OpenAIModels {
 	var oaiModel dto.OpenAIModels
 	if staticModel, ok := openAIModelsMap[modelName]; ok {
@@ -266,6 +354,7 @@ func ListModels(c *gin.Context, modelType int) {
 	if len(ownerGroups) > 0 {
 		ownerByModel = getPreferredModelOwners(userModelNames, ownerGroups)
 	}
+	capabilities := getCursorModelCapabilities(c.Request.Context(), userModelNames, ownerGroups, ownerByModel)
 	userOpenAiModels := make([]dto.OpenAIModels, 0, len(userModelNames))
 	for _, modelName := range userModelNames {
 		userOpenAiModels = append(userOpenAiModels, buildOpenAIModel(modelName, ownerByModel))
@@ -307,9 +396,21 @@ func ListModels(c *gin.Context, modelType int) {
 			"nextPageToken": nil,
 		})
 	default:
+		type listedModel struct {
+			dto.OpenAIModels
+			Cursor *native.CatalogModel `json:"cursor,omitempty"`
+		}
+		listed := make([]listedModel, 0, len(userOpenAiModels))
+		for _, m := range userOpenAiModels {
+			item := listedModel{OpenAIModels: m}
+			if cap, ok := capabilities[m.Id]; ok {
+				item.Cursor = &cap
+			}
+			listed = append(listed, item)
+		}
 		c.JSON(200, gin.H{
 			"success": true,
-			"data":    userOpenAiModels,
+			"data":    listed,
 			"object":  "list",
 		})
 	}
@@ -370,4 +471,66 @@ func RetrieveModel(c *gin.Context, modelType int) {
 			"error": openAIError,
 		})
 	}
+}
+
+// CursorRouteStatus intentionally omits channel/account identifiers. An account
+// shared by channels is counted once; percentages are never summed or averaged.
+type CursorRouteStatus struct {
+	Route  string                `json:"route"`
+	Quota  *native.QuotaSnapshot `json:"quota"`
+	Health native.AccountHealth  `json:"health"`
+	Error  string                `json:"error,omitempty"`
+}
+
+func getCursorRouteStatus(ctx context.Context, name string, groups []string) []CursorRouteStatus {
+	result := []CursorRouteStatus{}
+	abilities, err := model.GetAllEnableAbilityWithChannels()
+	if err != nil {
+		return []CursorRouteStatus{{Route: "unavailable", Error: "Cursor quota is unavailable"}}
+	}
+	ids := []int{}
+	for _, ability := range abilities {
+		if ability.Model == name && slices.Contains(groups, ability.Group) && ability.ChannelType == constant.ChannelTypeCursor && !slices.Contains(ids, ability.ChannelId) {
+			ids = append(ids, ability.ChannelId)
+		}
+	}
+	slices.Sort(ids)
+	seen := map[string]bool{}
+	channels := []*model.Channel{}
+	for _, id := range ids {
+		channel, err := model.CacheGetChannel(id)
+		if err != nil || channel.Status != common.ChannelStatusEnabled {
+			continue
+		}
+		key := strings.TrimSpace(channel.Key)
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+		channels = append(channels, channel)
+	}
+	result = make([]CursorRouteStatus, len(channels))
+	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
+	defer cancel()
+	var wg sync.WaitGroup
+	limit := make(chan struct{}, 4)
+	for i, channel := range channels {
+		result[i].Route = fmt.Sprint(i + 1)
+		wg.Go(func() {
+			select {
+			case limit <- struct{}{}:
+			case <-ctx.Done():
+				result[i].Error = "Cursor quota is unavailable"
+				return
+			}
+			defer func() { <-limit }()
+			quota, health, err := service.FetchCursorChannelStatus(ctx, channel)
+			result[i] = CursorRouteStatus{Route: fmt.Sprint(i + 1), Quota: quota, Health: health}
+			if err != nil {
+				result[i].Error = "Cursor quota is unavailable"
+			}
+		})
+	}
+	wg.Wait()
+	return result
 }

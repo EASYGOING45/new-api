@@ -1,7 +1,9 @@
 package service
 
 import (
+	"errors"
 	"fmt"
+	"github.com/QuantumNous/new-api/relaykit/types"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -126,4 +128,54 @@ func TestCacheGetRandomSatisfiedChannelUsesTokenAutoGroupsWhenGlobalAutoIsEmpty(
 	assert.Equal(t, 2102, second.Id)
 	assert.Equal(t, "default", selectedGroup)
 	assert.Equal(t, "default", common.GetContextKeyString(ctx, constant.ContextKeyAutoGroup))
+}
+
+func TestCursorFailureExclusionSurvivesAutoGroupAdvance(t *testing.T) {
+	db := setupChannelSelectAutoGroupsTest(t)
+	const modelName = "cursor-pool-auto"
+	createChannelSelectAutoGroupsChannel(t, db, 2101, "vip", modelName)
+	createChannelSelectAutoGroupsChannel(t, db, 2102, "default", modelName)
+	createChannelSelectAutoGroupsChannel(t, db, 2103, "default", modelName)
+	require.NoError(t, db.Model(&model.Channel{}).Where("id IN ?", []int{2101, 2102, 2103}).Updates(map[string]any{"type": constant.ChannelTypeCursor, "key": "fixture-shared"}).Error)
+	require.NoError(t, db.Model(&model.Channel{}).Where("id = ?", 2103).Update("key", "fixture-second").Error)
+	model.InitChannelCache()
+	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
+	common.SetContextKey(ctx, constant.ContextKeyUserGroup, "default")
+	common.SetContextKey(ctx, constant.ContextKeyTokenAutoGroups, []string{"vip", "default"})
+	common.SetContextKey(ctx, constant.ContextKeyTokenCrossGroupRetry, true)
+	param := &RetryParam{Ctx: ctx, TokenGroup: "auto", ModelName: modelName}
+	first, group, err := CacheGetRandomSatisfiedChannel(param)
+	require.NoError(t, err)
+	require.NotNil(t, first)
+	assert.Equal(t, 2101, first.Id)
+	assert.Equal(t, "vip", group)
+	common.SetContextKey(ctx, constant.ContextKeyChannelType, constant.ChannelTypeCursor)
+	common.SetContextKey(ctx, constant.ContextKeyChannelKey, first.Key)
+	RecordPolicyFailure(ctx, first.Id, types.NewErrorWithStatusCode(errors.New("fixture"), types.ErrorCodeBadResponseStatusCode, 503), PolicyDecision{Action: "retry"})
+	param.IncreaseRetry()
+	second, group, err := CacheGetRandomSatisfiedChannel(param)
+	require.NoError(t, err)
+	require.NotNil(t, second)
+	assert.Equal(t, 2103, second.Id)
+	assert.Equal(t, "default", group)
+}
+
+func TestMixedProviderPoolPreservesRetryPriority(t *testing.T) {
+	db := setupChannelSelectAutoGroupsTest(t)
+	createChannelSelectAutoGroupsChannel(t, db, 2101, "default", "mixed")
+	createChannelSelectAutoGroupsChannel(t, db, 2102, "default", "mixed")
+	require.NoError(t, db.Model(&model.Channel{}).Where("id = ?", 2101).Update("priority", 10).Error)
+	require.NoError(t, db.Model(&model.Channel{}).Where("id = ?", 2102).Update("type", constant.ChannelTypeCursor).Error)
+	model.InitChannelCache()
+	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
+	param := &RetryParam{Ctx: ctx, TokenGroup: "default", ModelName: "mixed"}
+	first, _, err := CacheGetRandomSatisfiedChannel(param)
+	require.NoError(t, err)
+	require.NotNil(t, first)
+	assert.Equal(t, 2101, first.Id)
+	param.IncreaseRetry()
+	second, _, err := CacheGetRandomSatisfiedChannel(param)
+	require.NoError(t, err)
+	require.NotNil(t, second)
+	assert.Equal(t, 2102, second.Id)
 }

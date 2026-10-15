@@ -109,13 +109,14 @@ func GetChannel(
 	model string,
 	retry int,
 	filters []dto.ChannelFilter,
+	policies ...ChannelCandidatePolicy,
 ) (*Channel, error) {
 	var abilities []Ability
 	err := DB.Where(commonGroupCol+" = ? and model = ? and enabled = ?", group, model, true).Order("priority DESC, weight DESC").Find(&abilities).Error
 	if err != nil {
 		return nil, err
 	}
-	abilities = filterAbilitiesByConstraints(abilities, model, filters)
+	abilities = filterAbilitiesByConstraints(abilities, model, filters, policies...)
 	if len(abilities) > 0 {
 		priorities := make([]int64, 0)
 		seen := make(map[int64]bool)
@@ -165,7 +166,7 @@ func GetChannel(
 // filterAbilitiesByConstraints applies the same ChannelSatisfiesFilters
 // predicate used by the memory-cache path. A failed channel lookup fails
 // closed when a task-plugin identity is required and fails open otherwise.
-func filterAbilitiesByConstraints(abilities []Ability, modelName string, filters []dto.ChannelFilter) []Ability {
+func filterAbilitiesByConstraints(abilities []Ability, modelName string, filters []dto.ChannelFilter, policies ...ChannelCandidatePolicy) []Ability {
 	if len(abilities) == 0 {
 		return nil
 	}
@@ -182,7 +183,7 @@ func filterAbilitiesByConstraints(abilities []Ability, modelName string, filters
 
 	var channels []*Channel
 	if err := DB.Where("id IN ?", channelIds).Find(&channels).Error; err != nil {
-		if identityFilterRequiresKey(filters) {
+		if identityFilterRequiresKey(filters) || len(policies) > 0 {
 			return nil
 		}
 		return abilities
@@ -194,11 +195,23 @@ func filterAbilitiesByConstraints(abilities []Ability, modelName string, filters
 	}
 
 	filtered := make([]Ability, 0, len(abilities))
+	candidates := make([]*Channel, 0, len(abilities))
 	for _, ability := range abilities {
 		channel := channelsByID[ability.ChannelId]
 		if ok, _ := ChannelSatisfiesFilters(channel, modelName, filters); ok {
 			filtered = append(filtered, ability)
+			candidates = append(candidates, channel)
 		}
+	}
+	if len(policies) > 0 {
+		for _, policy := range policies {
+			candidates = policy(candidates)
+		}
+		allowed := make(map[int]bool, len(candidates))
+		for _, channel := range candidates {
+			allowed[channel.Id] = true
+		}
+		filtered = lo.Filter(filtered, func(a Ability, _ int) bool { return allowed[a.ChannelId] })
 	}
 	return filtered
 }

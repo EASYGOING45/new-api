@@ -39,17 +39,18 @@ type PolicyEvent struct {
 // read the decision flow in the log details. Channel selection and the retry
 // decision stay in the relay flows; this state only records them.
 type RequestPolicyState struct {
-	FinalLogged       bool
-	StartedAt         time.Time
-	Attempts          int
-	SelectedGroup     string
-	SessionMode       string
-	SessionModeSource string
-	RuleName          string
-	Successful        bool
-	OutcomeRecorded   bool
-	mu                sync.Mutex
-	events            []PolicyEvent
+	FinalLogged          bool
+	StartedAt            time.Time
+	Attempts             int
+	SelectedGroup        string
+	SessionMode          string
+	SessionModeSource    string
+	RuleName             string
+	Successful           bool
+	OutcomeRecorded      bool
+	mu                   sync.Mutex
+	events               []PolicyEvent
+	failedCursorAccounts map[[32]byte]bool
 }
 
 func RequestPolicy(c *gin.Context) *RequestPolicyState {
@@ -101,6 +102,7 @@ func RecordPolicyFailure(c *gin.Context, channelID int, err *types.NewAPIError, 
 	if c == nil || err == nil {
 		return
 	}
+	recordCursorAccountFailure(c)
 	source := "upstream"
 	switch {
 	case types.IsChannelError(err):

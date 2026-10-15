@@ -281,6 +281,11 @@ func getChannel(c *gin.Context, info *relaycommon.RelayInfo, retryParam *service
 		return nil, types.NewError(errors.New(i18n.T(c, i18n.MsgRelayRetryGetChannelFailed, map[string]any{"Group": selectGroup, "Model": info.OriginModelName, "Error": err.Error()})), types.ErrorCodeGetChannelFailed, types.ErrOptionWithSkipRetry())
 	}
 	if channel == nil {
+		// Exhausting the Cursor account pool is not an internal server error.
+		// Preserve the last upstream outcome when no distinct account remains.
+		if common.GetContextKeyInt(c, constant.ContextKeyChannelType) == constant.ChannelTypeCursor && info.LastError != nil {
+			return nil, info.LastError
+		}
 		return nil, types.NewError(errors.New(i18n.T(c, i18n.MsgRelayRetryNoAvailableChannel, map[string]any{"Group": selectGroup, "Model": info.OriginModelName})), types.ErrorCodeGetChannelFailed, types.ErrOptionWithSkipRetry())
 	}
 

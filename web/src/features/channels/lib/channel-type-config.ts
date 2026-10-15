@@ -49,6 +49,12 @@ export interface ChannelTypeConfig {
  * Configuration for each channel type
  */
 export const CHANNEL_TYPE_CONFIGS: Record<number, ChannelTypeConfig> = {
+  64: {
+    id: 64,
+    name: CHANNEL_TYPES[64],
+    icon: 'Cursor',
+    hints: { key: 'Cursor User API Key' },
+  },
   [CHANNEL_TYPE_SGLANG]: {
     id: CHANNEL_TYPE_SGLANG,
     name: CHANNEL_TYPES[CHANNEL_TYPE_SGLANG],

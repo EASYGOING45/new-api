@@ -23,6 +23,7 @@ import type {
   ParameterEnabled,
 } from '../../types'
 import { formatMessageForAPI, isValidMessage } from '../message/message-utils'
+import { getCursorModelOptions } from '../parameters/playground-parameters'
 
 /**
  * Build API request payload from messages and config
@@ -42,6 +43,12 @@ export function buildChatCompletionPayload(
     group: config.group,
     messages: processedMessages,
     stream: config.stream,
+  }
+
+  const cursor = getCursorModelOptions(config)
+  if (cursor) {
+    payload.cursor = { parameters: cursor.parameters }
+    return payload
   }
 
   if (parameterEnabled.temperature) {

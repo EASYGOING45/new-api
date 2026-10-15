@@ -192,6 +192,21 @@ func OaiStreamHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http.Re
 		info.CountBillableToolCall(dto.BuildInCallFunctionCall, name)
 	}
 
+	// Headers and partial output may already be committed. Report truncation
+	// in-band, preserving usage settlement without retrying another channel.
+	if info.RelayFormat == types.RelayFormatOpenAI &&
+		c.Request.Context().Err() == nil &&
+		info.StreamStatus.EndReason != relaycommon.StreamEndReasonDone &&
+		info.StreamStatus.ResponseOutcome() == "" {
+		streamError := types.OpenAIError{
+			Message: "Upstream stream ended before a completion marker was received.",
+			Type:    "upstream_error",
+			Code:    "incomplete_stream",
+		}
+		info.StreamStatus.MarkFailed("incomplete_stream", streamError.Type, http.StatusBadGateway)
+		_ = helper.ObjectData(c, gin.H{"error": streamError})
+	}
+
 	HandleFinalResponse(c, info, lastStreamData, responseId, createAt, model, systemFingerprint, usage, containStreamUsage)
 
 	return usage, nil
@@ -200,9 +215,17 @@ func OaiStreamHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http.Re
 // observeStreamChoices collects billable function call names and records the
 // finish reason facts used by health sampling from one parsed chunk.
 func observeStreamChoices(info *relaycommon.RelayInfo, data string, seen map[string]struct{}, names *[]string) {
-	var streamResponse dto.ChatCompletionsStreamResponse
+	var streamResponse struct {
+		dto.ChatCompletionsStreamResponse
+		Error *types.OpenAIError `json:"error"`
+	}
 	if err := common.UnmarshalJsonStr(data, &streamResponse); err != nil {
 		return
+	}
+	if streamResponse.Error != nil {
+		// Keep raw upstream messages out of health classification. The original
+		// error event is already forwarded; do not synthesize a duplicate.
+		info.StreamStatus.MarkFailed("upstream_stream_error", "upstream_error", http.StatusBadGateway)
 	}
 	for _, choice := range streamResponse.Choices {
 		if choice.FinishReason != nil && *choice.FinishReason != "" {

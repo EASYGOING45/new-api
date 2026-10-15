@@ -80,6 +80,8 @@ export function usePlaygroundOptions({
     queryFn: async () =>
       requireServerSuccess(await getUserModels(currentGroup)),
     enabled: currentGroup !== '',
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: 5 * 60 * 1000,
   })
 
   const {
@@ -128,7 +130,16 @@ export function usePlaygroundOptions({
 
     if (shouldClearModelForGroup(modelsData, currentModel)) {
       updateConfig('model', '')
+      return
     }
+    updateConfig(
+      'cursor_capabilities',
+      modelsData.find((model) => model.value === currentModel)?.cursor
+    )
+    updateConfig(
+      'model_provider',
+      modelsData.find((model) => model.value === currentModel)?.provider
+    )
   }, [modelsData, currentModel, setModels, updateConfig])
 
   useEffect(() => {

@@ -23,6 +23,7 @@ import {
   CHANNEL_TYPE_NEW_API,
   CHANNEL_TYPE_VLLM,
   CHANNEL_TYPE_SGLANG,
+  CHANNEL_TYPE_CURSOR,
   CHANNEL_TYPE_OPTIONS,
   MODEL_FETCHABLE_TYPES,
 } from '../../constants'
@@ -51,6 +52,25 @@ function newAPIForm(baseUrl: string) {
     models: 'gpt-5',
   }
 }
+
+test('creates a native Cursor channel with the user key and grok model', () => {
+  expect(CHANNEL_TYPE_OPTIONS).toContainEqual({
+    value: CHANNEL_TYPE_CURSOR,
+    label: 'Cursor',
+  })
+  const parsed = channelFormSchema.safeParse({
+    ...newAPIForm(''),
+    type: CHANNEL_TYPE_CURSOR,
+    name: 'Cursor account',
+    models: 'grok-4.7',
+  })
+  expect(parsed.success).toBe(true)
+  expect(getKeyPromptForType(CHANNEL_TYPE_CURSOR)).toBe('Cursor User API Key')
+  expect(
+    getChannelTypeConfig(CHANNEL_TYPE_CURSOR).supportedModels
+  ).toBeUndefined()
+  expect(MODEL_FETCHABLE_TYPES.has(CHANNEL_TYPE_CURSOR)).toBe(true)
+})
 
 describe('New API channel', () => {
   test('registers selection, ordering, model discovery, and icon metadata', () => {

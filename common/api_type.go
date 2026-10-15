@@ -79,6 +79,8 @@ func ChannelType2APIType(channelType int) (int, bool) {
 		apiType = constant.APITypeAdvancedCustom
 	case constant.ChannelTypeSub2API:
 		apiType = constant.APITypeSub2API
+	case constant.ChannelTypeCursor:
+		apiType = constant.APITypeCursor
 	case constant.ChannelTypeNewAPI:
 		apiType = constant.APITypeNewAPI
 	}

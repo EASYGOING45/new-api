@@ -642,10 +642,31 @@ func GetUserModels(c *gin.Context) {
 			groupsToQuery = []string{group}
 		}
 	}
+	models := service.GetGroupsEnabledModels(groupsToQuery)
+	// Status is constrained by exactly the same model/group authorization as discovery.
+	if selected := c.Query("cursor_status_model"); selected != "" {
+		allowed := false
+		for _, name := range models {
+			if name == selected {
+				allowed = true
+				break
+			}
+		}
+		if !allowed {
+			c.JSON(http.StatusOK, gin.H{"success": true, "data": []any{}})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"success": true, "data": getCursorRouteStatus(c.Request.Context(), selected, groupsToQuery)})
+		return
+	}
+	owners := getPreferredModelOwners(models, groupsToQuery)
+	capabilities := getCursorModelCapabilities(c.Request.Context(), models, groupsToQuery, owners)
 	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data":    service.GetGroupsEnabledModels(groupsToQuery),
+		"success":            true,
+		"message":            "",
+		"data":               models,
+		"model_providers":    owners,
+		"model_capabilities": capabilities,
 	})
 }
 

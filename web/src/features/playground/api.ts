@@ -21,6 +21,7 @@ import { requireServerSuccess } from '@/lib/server-error-message'
 
 import { API_ENDPOINTS } from './constants'
 import type {
+  CursorAccountStatus,
   ChatCompletionRequest,
   ChatCompletionResponse,
   ModelOption,
@@ -55,10 +56,15 @@ export async function getUserModels(group: string): Promise<ModelOption[]> {
     return []
   }
 
-  return data.data.map((model: string) => ({
-    label: model,
-    value: model,
-  }))
+  return data.data.map((model: string) => {
+    const provider = data.model_providers?.[model]
+    return {
+      label: provider ? `${provider} / ${model}` : model,
+      value: model,
+      provider,
+      cursor: data.model_capabilities?.[model],
+    }
+  })
 }
 
 /**
@@ -85,4 +91,15 @@ export async function getUserGroups(): Promise<GroupOption[]> {
     ratio: info.ratio,
     desc: info.desc,
   }))
+}
+
+export async function getCursorStatus(
+  group: string,
+  model: string
+): Promise<CursorAccountStatus[]> {
+  const res = await api.get(API_ENDPOINTS.USER_MODELS, {
+    params: { group, cursor_status_model: model },
+  })
+  requireServerSuccess(res.data)
+  return res.data.data
 }

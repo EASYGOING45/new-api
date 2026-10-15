@@ -1,0 +1,1208 @@
+{
+  "models": [
+    {
+      "name": "grok-4.7",
+      "vendorName": "cursor",
+      "supportsAgent": true,
+      "supportsNonMaxMode": true,
+      "contextTokenLimit": 256000,
+      "parameterDefinitions": [
+        {
+          "id": "context",
+          "name": "Context",
+          "markdownTooltip": "Context size the model has available.",
+          "parameterType": {
+            "enumParameter": {
+              "values": [
+                {
+                  "value": "256k",
+                  "displayName": "256K"
+                },
+                {
+                  "value": "500k",
+                  "displayName": "500K",
+                  "increasesModelCost": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "reasoning_effort",
+          "name": "Effort",
+          "markdownTooltip": "Controls how much reasoning effort the model uses before responding.",
+          "parameterType": {
+            "enumParameter": {
+              "values": [
+                {
+                  "value": "low",
+                  "displayName": "Low"
+                },
+                {
+                  "value": "medium",
+                  "displayName": "Medium"
+                },
+                {
+                  "value": "high",
+                  "displayName": "High"
+                },
+                {
+                  "value": "xhigh",
+                  "displayName": "Extra High"
+                }
+              ]
+            }
+          },
+          "isCycleableByHotkey": true
+        },
+        {
+          "id": "fast",
+          "name": "Fast",
+          "markdownTooltip": "Significantly faster but consumes more usage",
+          "parameterType": {
+            "booleanParameter": {
+              "values": [
+                {
+                  "value": "false"
+                },
+                {
+                  "value": "true",
+                  "displayName": "Fast\u200b\u200b",
+                  "increasesModelCost": true
+                }
+              ]
+            }
+          },
+          "isCycleableByHotkey": false
+        }
+      ],
+      "variants": [
+        {
+          "legacySlug": "grok-4.7-low",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "256k"
+            },
+            {
+              "id": "reasoning_effort",
+              "value": "low"
+            },
+            {
+              "id": "fast",
+              "value": "false"
+            }
+          ]
+        },
+        {
+          "legacySlug": "grok-4.7-low-fast",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "256k"
+            },
+            {
+              "id": "reasoning_effort",
+              "value": "low"
+            },
+            {
+              "id": "fast",
+              "value": "true"
+            }
+          ]
+        },
+        {
+          "legacySlug": "grok-4.7-medium",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "256k"
+            },
+            {
+              "id": "reasoning_effort",
+              "value": "medium"
+            },
+            {
+              "id": "fast",
+              "value": "false"
+            }
+          ]
+        },
+        {
+          "legacySlug": "grok-4.7-medium-fast",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "256k"
+            },
+            {
+              "id": "reasoning_effort",
+              "value": "medium"
+            },
+            {
+              "id": "fast",
+              "value": "true"
+            }
+          ]
+        },
+        {
+          "legacySlug": "grok-4.7-high",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "256k"
+            },
+            {
+              "id": "reasoning_effort",
+              "value": "high"
+            },
+            {
+              "id": "fast",
+              "value": "false"
+            }
+          ]
+        },
+        {
+          "legacySlug": "grok-4.7-high-fast",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "256k"
+            },
+            {
+              "id": "reasoning_effort",
+              "value": "high"
+            },
+            {
+              "id": "fast",
+              "value": "true"
+            }
+          ],
+          "isDefaultNonMaxConfig": true
+        },
+        {
+          "legacySlug": "grok-4.7-xhigh",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "256k"
+            },
+            {
+              "id": "reasoning_effort",
+              "value": "xhigh"
+            },
+            {
+              "id": "fast",
+              "value": "false"
+            }
+          ]
+        },
+        {
+          "legacySlug": "grok-4.7-xhigh-fast",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "256k"
+            },
+            {
+              "id": "reasoning_effort",
+              "value": "xhigh"
+            },
+            {
+              "id": "fast",
+              "value": "true"
+            }
+          ]
+        },
+        {
+          "legacySlug": "grok-4.7-low",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "500k"
+            },
+            {
+              "id": "reasoning_effort",
+              "value": "low"
+            },
+            {
+              "id": "fast",
+              "value": "false"
+            }
+          ],
+          "isMaxMode": true
+        },
+        {
+          "legacySlug": "grok-4.7-low-fast",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "500k"
+            },
+            {
+              "id": "reasoning_effort",
+              "value": "low"
+            },
+            {
+              "id": "fast",
+              "value": "true"
+            }
+          ],
+          "isMaxMode": true
+        },
+        {
+          "legacySlug": "grok-4.7-medium",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "500k"
+            },
+            {
+              "id": "reasoning_effort",
+              "value": "medium"
+            },
+            {
+              "id": "fast",
+              "value": "false"
+            }
+          ],
+          "isMaxMode": true
+        },
+        {
+          "legacySlug": "grok-4.7-medium-fast",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "500k"
+            },
+            {
+              "id": "reasoning_effort",
+              "value": "medium"
+            },
+            {
+              "id": "fast",
+              "value": "true"
+            }
+          ],
+          "isMaxMode": true
+        },
+        {
+          "legacySlug": "grok-4.7-high",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "500k"
+            },
+            {
+              "id": "reasoning_effort",
+              "value": "high"
+            },
+            {
+              "id": "fast",
+              "value": "false"
+            }
+          ],
+          "isMaxMode": true
+        },
+        {
+          "legacySlug": "grok-4.7-high-fast",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "500k"
+            },
+            {
+              "id": "reasoning_effort",
+              "value": "high"
+            },
+            {
+              "id": "fast",
+              "value": "true"
+            }
+          ],
+          "isMaxMode": true,
+          "isDefaultMaxConfig": true
+        },
+        {
+          "legacySlug": "grok-4.7-xhigh",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "500k"
+            },
+            {
+              "id": "reasoning_effort",
+              "value": "xhigh"
+            },
+            {
+              "id": "fast",
+              "value": "false"
+            }
+          ],
+          "isMaxMode": true
+        },
+        {
+          "legacySlug": "grok-4.7-xhigh-fast",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "500k"
+            },
+            {
+              "id": "reasoning_effort",
+              "value": "xhigh"
+            },
+            {
+              "id": "fast",
+              "value": "true"
+            }
+          ],
+          "isMaxMode": true
+        }
+      ]
+    },
+    {
+      "name": "composer-2.5",
+      "vendorName": "cursor",
+      "supportsAgent": true,
+      "supportsNonMaxMode": true,
+      "contextTokenLimit": 200000,
+      "parameterDefinitions": [
+        {
+          "id": "fast",
+          "name": "Fast",
+          "markdownTooltip": "Significantly faster but consumes more usage",
+          "parameterType": {
+            "booleanParameter": {
+              "values": [
+                {
+                  "value": "false"
+                },
+                {
+                  "value": "true",
+                  "displayName": "Fast",
+                  "increasesModelCost": true
+                }
+              ]
+            }
+          },
+          "isCycleableByHotkey": true
+        }
+      ],
+      "variants": [
+        {
+          "legacySlug": "composer-2.5-fast",
+          "parameterValues": [
+            {
+              "id": "fast",
+              "value": "true"
+            }
+          ],
+          "isDefaultNonMaxConfig": true,
+          "isDefaultMaxConfig": true
+        },
+        {
+          "legacySlug": "composer-2.5",
+          "parameterValues": [
+            {
+              "id": "fast",
+              "value": "false"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "claude-opus-5-5",
+      "vendorName": "anthropic",
+      "supportsAgent": true,
+      "supportsNonMaxMode": true,
+      "contextTokenLimit": 300000,
+      "parameterDefinitions": [
+        {
+          "id": "context",
+          "name": "Context",
+          "markdownTooltip": "Context size the model has available.",
+          "parameterType": {
+            "enumParameter": {
+              "values": [
+                {
+                  "value": "300k",
+                  "displayName": "300K"
+                },
+                {
+                  "value": "1m",
+                  "displayName": "1M",
+                  "increasesModelCost": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "effort",
+          "name": "Effort",
+          "markdownTooltip": "Effort the model uses to generate its response.",
+          "parameterType": {
+            "enumParameter": {
+              "values": [
+                {
+                  "value": "low",
+                  "displayName": "Low"
+                },
+                {
+                  "value": "medium",
+                  "displayName": "Medium"
+                },
+                {
+                  "value": "high",
+                  "displayName": "High"
+                },
+                {
+                  "value": "xhigh",
+                  "displayName": "Extra High"
+                },
+                {
+                  "value": "max",
+                  "displayName": "Max"
+                }
+              ]
+            }
+          },
+          "isCycleableByHotkey": true
+        },
+        {
+          "id": "fast",
+          "name": "Fast",
+          "markdownTooltip": "2x more expensive, but significantly faster speeds.",
+          "parameterType": {
+            "booleanParameter": {
+              "values": [
+                {
+                  "value": "false"
+                },
+                {
+                  "value": "true",
+                  "displayName": "Fast",
+                  "increasesModelCost": true
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "variants": [
+        {
+          "legacySlug": "claude-opus-5-5-low",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "300k"
+            },
+            {
+              "id": "effort",
+              "value": "low"
+            },
+            {
+              "id": "fast",
+              "value": "false"
+            }
+          ]
+        },
+        {
+          "legacySlug": "claude-opus-5-5-low-fast",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "300k"
+            },
+            {
+              "id": "effort",
+              "value": "low"
+            },
+            {
+              "id": "fast",
+              "value": "true"
+            }
+          ],
+          "isMaxMode": true
+        },
+        {
+          "legacySlug": "claude-opus-5-5-medium",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "300k"
+            },
+            {
+              "id": "effort",
+              "value": "medium"
+            },
+            {
+              "id": "fast",
+              "value": "false"
+            }
+          ],
+          "isDefaultNonMaxConfig": true
+        },
+        {
+          "legacySlug": "claude-opus-5-5-medium-fast",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "300k"
+            },
+            {
+              "id": "effort",
+              "value": "medium"
+            },
+            {
+              "id": "fast",
+              "value": "true"
+            }
+          ],
+          "isMaxMode": true
+        },
+        {
+          "legacySlug": "claude-opus-5-5-high",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "300k"
+            },
+            {
+              "id": "effort",
+              "value": "high"
+            },
+            {
+              "id": "fast",
+              "value": "false"
+            }
+          ]
+        },
+        {
+          "legacySlug": "claude-opus-5-5-high-fast",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "300k"
+            },
+            {
+              "id": "effort",
+              "value": "high"
+            },
+            {
+              "id": "fast",
+              "value": "true"
+            }
+          ],
+          "isMaxMode": true
+        },
+        {
+          "legacySlug": "claude-opus-5-5-xhigh",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "300k"
+            },
+            {
+              "id": "effort",
+              "value": "xhigh"
+            },
+            {
+              "id": "fast",
+              "value": "false"
+            }
+          ]
+        },
+        {
+          "legacySlug": "claude-opus-5-5-xhigh-fast",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "300k"
+            },
+            {
+              "id": "effort",
+              "value": "xhigh"
+            },
+            {
+              "id": "fast",
+              "value": "true"
+            }
+          ],
+          "isMaxMode": true
+        },
+        {
+          "legacySlug": "claude-opus-5-5-max",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "300k"
+            },
+            {
+              "id": "effort",
+              "value": "max"
+            },
+            {
+              "id": "fast",
+              "value": "false"
+            }
+          ]
+        },
+        {
+          "legacySlug": "claude-opus-5-5-max-fast",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "300k"
+            },
+            {
+              "id": "effort",
+              "value": "max"
+            },
+            {
+              "id": "fast",
+              "value": "true"
+            }
+          ],
+          "isMaxMode": true
+        },
+        {
+          "legacySlug": "claude-opus-5-5-low",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "1m"
+            },
+            {
+              "id": "effort",
+              "value": "low"
+            },
+            {
+              "id": "fast",
+              "value": "false"
+            }
+          ],
+          "isMaxMode": true
+        },
+        {
+          "legacySlug": "claude-opus-5-5-low-fast",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "1m"
+            },
+            {
+              "id": "effort",
+              "value": "low"
+            },
+            {
+              "id": "fast",
+              "value": "true"
+            }
+          ],
+          "isMaxMode": true
+        },
+        {
+          "legacySlug": "claude-opus-5-5-medium",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "1m"
+            },
+            {
+              "id": "effort",
+              "value": "medium"
+            },
+            {
+              "id": "fast",
+              "value": "false"
+            }
+          ],
+          "isMaxMode": true,
+          "isDefaultMaxConfig": true
+        },
+        {
+          "legacySlug": "claude-opus-5-5-medium-fast",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "1m"
+            },
+            {
+              "id": "effort",
+              "value": "medium"
+            },
+            {
+              "id": "fast",
+              "value": "true"
+            }
+          ],
+          "isMaxMode": true
+        },
+        {
+          "legacySlug": "claude-opus-5-5-high",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "1m"
+            },
+            {
+              "id": "effort",
+              "value": "high"
+            },
+            {
+              "id": "fast",
+              "value": "false"
+            }
+          ],
+          "isMaxMode": true
+        },
+        {
+          "legacySlug": "claude-opus-5-5-high-fast",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "1m"
+            },
+            {
+              "id": "effort",
+              "value": "high"
+            },
+            {
+              "id": "fast",
+              "value": "true"
+            }
+          ],
+          "isMaxMode": true
+        },
+        {
+          "legacySlug": "claude-opus-5-5-xhigh",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "1m"
+            },
+            {
+              "id": "effort",
+              "value": "xhigh"
+            },
+            {
+              "id": "fast",
+              "value": "false"
+            }
+          ],
+          "isMaxMode": true
+        },
+        {
+          "legacySlug": "claude-opus-5-5-xhigh-fast",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "1m"
+            },
+            {
+              "id": "effort",
+              "value": "xhigh"
+            },
+            {
+              "id": "fast",
+              "value": "true"
+            }
+          ],
+          "isMaxMode": true
+        },
+        {
+          "legacySlug": "claude-opus-5-5-max",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "1m"
+            },
+            {
+              "id": "effort",
+              "value": "max"
+            },
+            {
+              "id": "fast",
+              "value": "false"
+            }
+          ],
+          "isMaxMode": true
+        },
+        {
+          "legacySlug": "claude-opus-5-5-max-fast",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "1m"
+            },
+            {
+              "id": "effort",
+              "value": "max"
+            },
+            {
+              "id": "fast",
+              "value": "true"
+            }
+          ],
+          "isMaxMode": true
+        }
+      ]
+    },
+    {
+      "name": "gpt-5.5",
+      "vendorName": "openai",
+      "supportsAgent": true,
+      "supportsNonMaxMode": true,
+      "contextTokenLimit": 272000,
+      "parameterDefinitions": [
+        {
+          "id": "context",
+          "name": "Context",
+          "markdownTooltip": "Context size the model has available.",
+          "parameterType": {
+            "enumParameter": {
+              "values": [
+                {
+                  "value": "272k",
+                  "displayName": "272K"
+                },
+                {
+                  "value": "1m",
+                  "displayName": "1M",
+                  "increasesModelCost": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "reasoning",
+          "name": "Reasoning",
+          "markdownTooltip": "Reasoning effort the model uses to generate its response.",
+          "parameterType": {
+            "enumParameter": {
+              "values": [
+                {
+                  "value": "none",
+                  "displayName": "None"
+                },
+                {
+                  "value": "low",
+                  "displayName": "Low"
+                },
+                {
+                  "value": "medium",
+                  "displayName": "Medium"
+                },
+                {
+                  "value": "high",
+                  "displayName": "High"
+                },
+                {
+                  "value": "extra-high",
+                  "displayName": "Extra High"
+                }
+              ]
+            }
+          },
+          "isCycleableByHotkey": true
+        },
+        {
+          "id": "fast",
+          "name": "Fast",
+          "markdownTooltip": "2.5x more expensive, but faster speeds.",
+          "parameterType": {
+            "booleanParameter": {
+              "values": [
+                {
+                  "value": "false"
+                },
+                {
+                  "value": "true",
+                  "displayName": "Fast",
+                  "increasesModelCost": true
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "variants": [
+        {
+          "legacySlug": "gpt-5.5-none",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "272k"
+            },
+            {
+              "id": "reasoning",
+              "value": "none"
+            },
+            {
+              "id": "fast",
+              "value": "false"
+            }
+          ]
+        },
+        {
+          "legacySlug": "gpt-5.5-none-fast",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "272k"
+            },
+            {
+              "id": "reasoning",
+              "value": "none"
+            },
+            {
+              "id": "fast",
+              "value": "true"
+            }
+          ]
+        },
+        {
+          "legacySlug": "gpt-5.5-low",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "272k"
+            },
+            {
+              "id": "reasoning",
+              "value": "low"
+            },
+            {
+              "id": "fast",
+              "value": "false"
+            }
+          ]
+        },
+        {
+          "legacySlug": "gpt-5.5-low-fast",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "272k"
+            },
+            {
+              "id": "reasoning",
+              "value": "low"
+            },
+            {
+              "id": "fast",
+              "value": "true"
+            }
+          ]
+        },
+        {
+          "legacySlug": "gpt-5.5-medium",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "272k"
+            },
+            {
+              "id": "reasoning",
+              "value": "medium"
+            },
+            {
+              "id": "fast",
+              "value": "false"
+            }
+          ],
+          "isDefaultNonMaxConfig": true
+        },
+        {
+          "legacySlug": "gpt-5.5-medium-fast",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "272k"
+            },
+            {
+              "id": "reasoning",
+              "value": "medium"
+            },
+            {
+              "id": "fast",
+              "value": "true"
+            }
+          ]
+        },
+        {
+          "legacySlug": "gpt-5.5-high",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "272k"
+            },
+            {
+              "id": "reasoning",
+              "value": "high"
+            },
+            {
+              "id": "fast",
+              "value": "false"
+            }
+          ]
+        },
+        {
+          "legacySlug": "gpt-5.5-high-fast",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "272k"
+            },
+            {
+              "id": "reasoning",
+              "value": "high"
+            },
+            {
+              "id": "fast",
+              "value": "true"
+            }
+          ]
+        },
+        {
+          "legacySlug": "gpt-5.5-extra-high",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "272k"
+            },
+            {
+              "id": "reasoning",
+              "value": "extra-high"
+            },
+            {
+              "id": "fast",
+              "value": "false"
+            }
+          ]
+        },
+        {
+          "legacySlug": "gpt-5.5-extra-high-fast",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "272k"
+            },
+            {
+              "id": "reasoning",
+              "value": "extra-high"
+            },
+            {
+              "id": "fast",
+              "value": "true"
+            }
+          ]
+        },
+        {
+          "legacySlug": "gpt-5.5-none",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "1m"
+            },
+            {
+              "id": "reasoning",
+              "value": "none"
+            },
+            {
+              "id": "fast",
+              "value": "false"
+            }
+          ],
+          "isMaxMode": true
+        },
+        {
+          "legacySlug": "gpt-5.5-low",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "1m"
+            },
+            {
+              "id": "reasoning",
+              "value": "low"
+            },
+            {
+              "id": "fast",
+              "value": "false"
+            }
+          ],
+          "isMaxMode": true
+        },
+        {
+          "legacySlug": "gpt-5.5-medium",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "1m"
+            },
+            {
+              "id": "reasoning",
+              "value": "medium"
+            },
+            {
+              "id": "fast",
+              "value": "false"
+            }
+          ],
+          "isMaxMode": true,
+          "isDefaultMaxConfig": true
+        },
+        {
+          "legacySlug": "gpt-5.5-high",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "1m"
+            },
+            {
+              "id": "reasoning",
+              "value": "high"
+            },
+            {
+              "id": "fast",
+              "value": "false"
+            }
+          ],
+          "isMaxMode": true
+        },
+        {
+          "legacySlug": "gpt-5.5-extra-high",
+          "parameterValues": [
+            {
+              "id": "context",
+              "value": "1m"
+            },
+            {
+              "id": "reasoning",
+              "value": "extra-high"
+            },
+            {
+              "id": "fast",
+              "value": "false"
+            }
+          ],
+          "isMaxMode": true
+        }
+      ]
+    },
+    {
+      "name": "grok",
+      "vendorName": "cursor",
+      "variants": [
+        {
+          "legacySlug": "grok"
+        }
+      ]
+    }
+  ]
+}

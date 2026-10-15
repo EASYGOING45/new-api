@@ -20,6 +20,36 @@ import type { PlaygroundConfig, ParameterEnabled } from '../../types'
 
 type ParameterValue = PlaygroundConfig[keyof PlaygroundConfig]
 
+export function getCursorModelOptions(config: PlaygroundConfig) {
+  const capabilities = config.cursor_capabilities
+  if (!capabilities) return null
+  if (capabilities.error) return { capabilities, parameters: {} }
+  const requested = { ...capabilities.defaults, ...config.cursor_parameters }
+  const selected = capabilities.variants.find((variant) =>
+    Object.entries(requested).every(
+      ([id, value]) => variant.parameters[id] === value
+    )
+  )
+  return {
+    capabilities,
+    parameters: selected?.parameters ?? capabilities.defaults,
+  }
+}
+
+export function isCursorParameterValueAvailable(
+  config: PlaygroundConfig,
+  id: string,
+  value: string
+): boolean {
+  const cursor = getCursorModelOptions(config)
+  if (!cursor || cursor.capabilities.error) return false
+  return cursor.capabilities.variants.some((variant) =>
+    Object.entries({ ...cursor.parameters, [id]: value }).every(
+      ([key, selected]) => variant.parameters[key] === selected
+    )
+  )
+}
+
 export type PlaygroundParameterKey = keyof ParameterEnabled
 
 export type PlaygroundParameterControl = {

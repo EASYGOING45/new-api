@@ -331,6 +331,15 @@ func FetchUpstreamModels(c *gin.Context) {
 		return
 	}
 
+	if channel.Type == constant.ChannelTypeCursor {
+		catalog, err := service.FetchCursorChannelCatalog(c.Request.Context(), channel, true)
+		if err != nil {
+			common.ApiErrorT(c, "Failed to fetch models: {{error}}", map[string]any{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"success": true, "message": "", "data": catalog.IDs(), "cursor_catalog": catalog})
+		return
+	}
 	ids, err := fetchChannelUpstreamModelIDs(channel)
 	if err != nil {
 		common.ApiErrorT(c, "Failed to fetch models: {{error}}", map[string]any{"error": err.Error()})
@@ -1452,7 +1461,7 @@ func FetchModels(c *gin.Context) {
 		}
 
 		key := strings.TrimSpace(req.Key)
-		if req.Type != constant.ChannelTypeCodex {
+		if req.Type != constant.ChannelTypeCodex && req.Type != constant.ChannelTypeCursor {
 			key = strings.Split(key, "\n")[0]
 		}
 		channel = &model.Channel{

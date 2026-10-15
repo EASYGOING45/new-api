@@ -76,6 +76,8 @@ export interface ChatCompletionRequest {
   frequency_penalty?: number
   presence_penalty?: number
   seed?: number
+  reasoning_effort?: string
+  cursor?: { parameters: Record<string, string> }
 }
 
 export interface ChatCompletionChunk {
@@ -126,6 +128,9 @@ export interface PlaygroundConfig {
   presence_penalty: number
   seed: number | null
   stream: boolean
+  model_provider?: string
+  cursor_capabilities?: CursorModelCapabilities
+  cursor_parameters?: Record<string, string>
 }
 
 export interface ParameterEnabled {
@@ -137,10 +142,38 @@ export interface ParameterEnabled {
   seed: boolean
 }
 
+export interface CursorModelCapabilities {
+  budget_scope?: string
+  id: string
+  provider: string
+  base_id: string
+  parameters: Array<{
+    id: string
+    name: string
+    values: Array<{
+      value: string
+      display_name: string
+      increases_cost?: boolean
+    }>
+  }>
+  variants: Array<{
+    id: string
+    parameters: Record<string, string>
+    max_mode: boolean
+  }>
+  defaults: Record<string, string>
+  default_source: string
+  context_tokens?: number
+  observed_at: string
+  error?: string
+}
+
 // Model and group options
 export interface ModelOption {
   label: string
   value: string
+  provider?: string
+  cursor?: CursorModelCapabilities
 }
 
 export interface GroupOption {
@@ -148,4 +181,37 @@ export interface GroupOption {
   value: string
   ratio: number | string
   desc?: string
+}
+
+export interface CursorAccountStatus {
+  route: string
+  quota: {
+    observed_at: string
+    expires_at: string
+    windows: { name: string; used_percent: number }[]
+    billing_cycle_end_ms: string
+    on_demand: string
+    on_demand_budget?: {
+      state: string
+      limits: {
+        scope: string
+        used_usd: number | null
+        limit_usd: number | null
+        remaining_usd: number | null
+        state: string
+      }[]
+    }
+    resets_at?: string | null
+    reset_state?: string
+  } | null
+  health: {
+    disabled: boolean
+    in_flight: number
+    max_in_flight: number
+    cooldowns: { scope: string; retry_at: string; state: string }[]
+    last_requests?:
+      | { scope: string; observed_at: string; status: number }[]
+      | null
+  }
+  error?: string
 }

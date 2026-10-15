@@ -117,6 +117,7 @@ func CacheGetRandomSatisfiedChannel(param *RetryParam) (*model.Channel, string, 
 	selectGroup := param.TokenGroup
 	userGroup := common.GetContextKeyString(param.Ctx, constant.ContextKeyUserGroup)
 	filters := GetChannelConstraints(param.Ctx).Filters
+	policy := cursorCandidatePolicy(param.Ctx, param.ModelName)
 
 	if param.TokenGroup == "auto" {
 		autoGroups := GetRequestAutoGroups(param.Ctx, userGroup)
@@ -152,6 +153,7 @@ func CacheGetRandomSatisfiedChannel(param *RetryParam) (*model.Channel, string, 
 				param.ModelName,
 				priorityRetry,
 				filters,
+				policy,
 			)
 			if channel == nil {
 				// Current group has no available channel for this model, try next group
@@ -195,6 +197,7 @@ func CacheGetRandomSatisfiedChannel(param *RetryParam) (*model.Channel, string, 
 			param.ModelName,
 			param.GetRetry(),
 			filters,
+			policy,
 		)
 		if err != nil {
 			return nil, param.TokenGroup, err
@@ -316,6 +319,9 @@ func SelectChannelForRequest(c *gin.Context, modelName string, retry *RetryParam
 			affinitySatisfied := false
 			if err == nil && preferred != nil && preferred.Status == common.ChannelStatusEnabled {
 				affinitySatisfied, _ = model.ChannelSatisfiesFilters(preferred, modelName, constraints.Filters)
+				if affinitySatisfied {
+					affinitySatisfied = cursorRoutingStatus(c, preferred, modelName).Blocked == ""
+				}
 			}
 			if affinitySatisfied {
 				if usingGroup == "auto" {
