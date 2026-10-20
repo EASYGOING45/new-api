@@ -2,7 +2,7 @@
 
 本文是用于个人 fork 的脱敏版说明。源码、协议测试夹具与汇总结果可提交；凭据、数据库、二进制、原始协议帧、截图及逐请求压测数据只保留在被 Git 忽略的 `.local-tests/`。文中的 `.local-tests/` 链接仅对原实验机器有效，GitHub 上不会包含对应文件；新 clone 不带这些私有实验资产。
 
-**2026-10-20 本地账号池管理页已补齐**：独立验收实例使用 `http://localhost:3330/cursor-accounts`，包含账号状态、渠道操作及网关额度设置入口，见第 10 节。后文 `3300` 是此前保留的 Demo；STAG 仍运行上一阶段版本。
+**2026-10-20 账号池管理页已部署 STAG**：线上入口为 [Cursor 账号池](https://stag-dot-new-api-dot-bkai-develop.bkapps-gz1.woa.com/cursor-accounts)，包含账号状态、渠道操作及网关额度设置入口。独立本地验收实例为 `http://localhost:3330/cursor-accounts`；本地使用见第 10 节，提交、镜像和部署验收见第 11 节。后文 `3300` 是此前保留的 Demo。
 
 本地 Demo 已接入 **按 Cursor 账号自动获取的模型目录**。客户端统一访问 new-api，Go Cursor 渠道在进程内完成认证、目录查询和推理；旧 Node 适配器已停止。当前账号的目录快照包含 **40 个基础模型、289 个含预设变体的模型 ID**，覆盖 7 个上游 Provider；这些数字是 2026-10-15 的观察值，不是代码中的白名单。
 
@@ -792,7 +792,7 @@ HTTPS 证书验证、安全刷新 Cookie（`Secure`、`HttpOnly`、`SameSite=Str
 
 ## 10. 本地 Cursor 账号池管理（2026-10-20）
 
-本轮在个人 fork 的 `codex/cursor-account-pool-admin` 分支开发，已合入 fork 远端维护分支和官方 `upstream/main@32e587406`。本地合并提交为 `17cfa6890`，提交身份为 EASYGOING45，使用现有 GPG 配置签名。合并保留了上游模型路由别名回退与 fork 的账号池健康过滤，并增加三数据库回归。新功能尚未推送或更新到 STAG。
+本轮在个人 fork 的 `codex/cursor-account-pool-admin` 分支开发，已合入 fork 远端维护分支和官方 `upstream/main@32e587406`。本地合并提交为 `17cfa6890`，提交身份为 EASYGOING45，使用现有 GPG 配置签名。合并保留了上游模型路由别名回退与 fork 的账号池健康过滤，并增加三数据库回归。本地完成后的提交、推送及 STAG 更新记录见第 11 节。
 
 ### 10.1 页面与使用
 
@@ -812,7 +812,7 @@ HTTPS 证书验证、安全刷新 Cookie（`Secure`、`HttpOnly`、`SameSite=Str
 
 使用 `http://localhost:3330/cursor-accounts`，管理员为 `gatewayadmin`。密码位于 `.local-tests/account-pool-admin-20261020/credentials.json` 的 `password`，不随仓库保存。容器名为 `new-api-account-pool-local`，只将 `127.0.0.1:3330` 映射到容器；业务数据位于同目录的 `data/`。使用 `localhost` 访问，可与旧 `127.0.0.1:3300` 的浏览器会话分开。
 
-本实例使用已构建前端的 Linux 二进制挂载进行本地开发验收，基于已验证的运行镜像；本轮没有发布新镜像。配置了一个真实 Cursor 账号及 Grok / Composer 两个验收模型，真实检查只读取额度，新增生成请求为 0。第二个真实账号仍未提供；模拟多账号结果不替代真实账号验收。
+本实例使用已构建前端的 Linux 二进制挂载进行本地开发验收，基于已验证的运行镜像；本地验收阶段没有发布新镜像，后续发布见第 11 节。配置了一个真实 Cursor 账号及 Grok / Composer 两个验收模型，真实检查只读取额度，新增生成请求为 0。第二个真实账号仍未提供；模拟多账号结果不替代真实账号验收。
 
 从仓库根目录停止、恢复实例：
 
@@ -821,7 +821,7 @@ docker stop new-api-account-pool-local
 docker start new-api-account-pool-local
 ```
 
-保持 `data/`、`demo.env` 和本地二进制文件，恢复命令会使用原数据库。`start-demo.py` / `rebuild-demo.py` 是本轮初始化与构建脚本，会设置测试配置，不用作日常恢复命令。旧 `3300` 和 STAG 未在本轮替换。
+保持 `data/`、`demo.env` 和本地二进制文件，恢复命令会使用原数据库。`start-demo.py` / `rebuild-demo.py` 是本轮初始化与构建脚本，会设置测试配置，不用作日常恢复命令。本地验收阶段没有替换旧 `3300` 和 STAG；本次 STAG 更新见第 11 节。
 
 ### 10.3 接口、权限和验证
 
@@ -838,3 +838,44 @@ docker start new-api-account-pool-local
 | 升级 | 在三种隔离数据库中，从上一阶段已部署镜像升级并再次启动；样本用户、渠道和原 API Key 保留，第二次启动的列/索引定义保持一致 |
 
 原始证据保留在 `.local-tests/account-pool-admin-20261020/`：`web-regression-final.log`、`backend-final.log`、`account-status-matrix-final.log`、`upgrade-results.json` 和本地界面截图。凭据、数据库和运行二进制都属于被忽略的本机资产。进程内限流/熔断仍需单副本；跨实例共享状态、不同 Key 的真实账号归属及共享团队预算仍待后续处理。
+
+
+## 11. Fork 提交与 STAG 更新（2026-10-20）
+
+账号池管理功能已推送个人 fork，并在现有 `bkai-develop/new-api` 模块的 STAG 环境更新。线上入口为 [账号池](https://stag-dot-new-api-dot-bkai-develop.bkapps-gz1.woa.com/cursor-accounts) 和 [概览](https://stag-dot-new-api-dot-bkai-develop.bkapps-gz1.woa.com/dashboard/overview)。沿用原管理员登录方式和数据库，刷新页面即可看到「Cursor 账号池」；本轮没有创建生产实例或修改其他模块。
+
+| 对象 | 实际版本与结果 |
+| --- | --- |
+| Fork 分支 | `EASYGOING45/new-api:codex/cursor-account-pool-admin` |
+| 功能提交 | `f8ad6f929e2b02ed7affbb6e01e8661e7fe75dde`；GitHub 作者与提交者均为 EASYGOING45，GPG 签名验证有效 |
+| 上游基础 | 已合入 `upstream/main@32e587406`，本地签名合并提交为 `17cfa6890` |
+| 镜像 | `mirrors.tencent.com/bkmonitor-ai/new-api:cursor-pool-stag-20261020-f8ad6f929e2b`，仅 `linux/amd64` |
+| OCI index | `sha256:52728e8db9ea8d124cbfb37f55feb58e0303a4a433bda5b189a6c75dfea6f81a` |
+| AMD64 manifest | `sha256:4a0289ec714ffd602a56918cffdc0ef84d632244fbcc2e1968237377ccb379ac` |
+| PaaS 部署 | `4d96e633-bbf5-425a-a820-59ad5bc9202e`，2026-10-20 16:04:23（Asia/Shanghai）成功 |
+| 运行实例 | bkapp revision `157720`，进程 version `140066`；单副本就绪、重启次数 0 |
+
+镜像从上述功能提交的 `git archive` 隔离目录构建，仅将空的 `VERSION` 生成为含日期和提交号的版本标识；前后端使用同一值。构建目录不包含凭据、数据库、本地压测数据或未提交文件。`.dockerignore` 已排除本地实验资产，Dockerfile 保留许可证并使用构建机平台运行编译阶段。Git 提交前检查、暂存内容凭据扫描均通过；本机钩子仍只安装在当前仓库，新 clone 后需要按原交接重新安装。
+
+完整镜像先在本地新容器验证，再推送、读回 registry manifest 并按 digest 拉取复验；均未挂载替换程序。检查了启动版本、页面入口、真实额度读取和管理员鉴权，镜像运行环境中未烘焙会话或 Cursor 密钥。
+
+### 11.1 云端验收与保留配置
+
+更新前后已比较原管理员、渠道及模型白名单、API Key 限制、计价和注册配置，结果一致；原验收 Key 仍能读取 35 个已配置模型。此数量指渠道路由配置，不代表当前上游动态目录的总量；本次部署没有自动扩展模型白名单。Grok 的 effort、Fast、256K/500K context，以及 Composer 的 Fast、固定 200K 能力均由当前目录返回，未写死在新页面中。
+
+新管理状态接口可返回额度和健康信息，匿名调用为 HTTP 401。浏览器刷新后保留登录，账号池卡片、详情展开、网关额度设置和概览入口正常显示。Cursor Models 与已耗尽的 Other Models 分别展示；读取失败或快照过期仍显示未知，不能将套餐耗尽解释为整个账号不可用。
+
+本次线上只发起两次真实短请求，问题均为 `17 + 25`，完整正文均为 `42`：
+
+| 请求 | 实际结果 |
+| --- | --- |
+| Grok 4.7，effort=low、Fast=false、context=256k，非流式 | HTTP 200，3.68 秒 |
+| Composer 2.5，Fast=true，SSE | HTTP 200，5.87 秒，包含结束标记 |
+
+这两次是部署可用性检查，不构成延迟或并发基准。原单账号 2 并发、单副本和进程内健康状态机制保留；第二个真实账号及跨实例共享状态仍待后续验收。内部测试计价继续为零，网关余额和实际 Cursor 支出仍需分别理解。
+
+部署证据保留在本机 `.local-tests/account-pool-release-20261020/`，包含 `release.json`、`platform-after.json`、`generation-smoke.json`、配置比较结果、镜像构建/推送日志及页面截图，不提交原始资产。
+
+### 11.2 运行与回退
+
+日常访问上述 HTTPS 入口，无需重复初始化或创建渠道；本地 `3330` 与旧 `3300` 实例继续保留。若需要回退应用，PaaS 选择上一阶段运行镜像 `cursor-stag-20261019-27dfac0df4bf`，不要选择临时 `db-init` 镜像或启用初始化前置步骤。应用镜像回退不会回退 MySQL 结构，数据恢复应单独处理；本轮没有执行删库、重置账号或数据库回滚。
