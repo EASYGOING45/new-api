@@ -30,7 +30,7 @@ import { TagBatchEditDialog } from './dialogs/tag-batch-edit-dialog'
 import { UpstreamUpdateDialog } from './dialogs/upstream-update-dialog'
 import { ChannelMutateDrawer } from './drawers/channel-mutate-drawer'
 
-export function ChannelsDialogs() {
+export function ChannelsDialogs(props: { initialChannelType?: number }) {
   const { open, setOpen, currentRow, upstream } = useChannels()
 
   return (
@@ -55,6 +55,7 @@ export function ChannelsDialogs() {
         open={open === 'create-channel' || open === 'update-channel'}
         onOpenChange={(v) => !v && setOpen(null)}
         currentRow={open === 'update-channel' ? currentRow : null}
+        initialChannelType={props.initialChannelType}
       />
 
       {/* Test Channel Dialog */}

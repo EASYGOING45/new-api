@@ -10,3 +10,17 @@ docs
 /web/node_modules
 /web/dist
 !THIRD-PARTY-LICENSES.md
+
+# Local credentials, databases, experiments and build outputs are never inputs.
+.local-tests
+.env
+.env.*
+!.env.example
+/data
+/logs
+/new-api
+/new-api.exe
+.venv
+**/__pycache__
+**/*.pyc
+**/node_modules

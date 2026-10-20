@@ -40,7 +40,13 @@ import {
 import { useTranslation } from 'react-i18next'
 
 import type { SidebarData } from '@/components/layout/types'
+import {
+  ADMIN_PERMISSION_ACTIONS,
+  ADMIN_PERMISSION_RESOURCES,
+  hasPermission,
+} from '@/lib/admin-permissions'
 import { ROLE } from '@/lib/roles'
+import { useAuthStore } from '@/stores/auth-store'
 
 /**
  * Root navigation groups for the application sidebar.
@@ -50,6 +56,13 @@ import { ROLE } from '@/lib/roles'
  */
 export function useSidebarData(): SidebarData {
   const { t } = useTranslation()
+  const canReadCursorAccounts = useAuthStore((s) =>
+    hasPermission(
+      s.auth.user,
+      ADMIN_PERMISSION_RESOURCES.CHANNEL,
+      ADMIN_PERMISSION_ACTIONS.READ
+    )
+  )
 
   return {
     navGroups: [
@@ -137,6 +150,15 @@ export function useSidebarData(): SidebarData {
             url: '/channels',
             icon: Radio,
           },
+          ...(canReadCursorAccounts
+            ? [
+                {
+                  title: t('Cursor account pool'),
+                  url: '/cursor-accounts',
+                  icon: Radio,
+                },
+              ]
+            : []),
           {
             title: t('Models'),
             url: '/models/metadata',
